@@ -1,4 +1,4 @@
-# Marketplace Stack Details App
+# Marketplace Quick Info Dashboard App
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![TypeScript](https://img.shields.io/badge/TypeScript-4.9.3-blue.svg)](https://www.typescriptlang.org/)
@@ -31,8 +31,8 @@ A modern, comprehensive dashboard widget for Contentstack marketplace apps that 
 
 ```bash
 # Clone the repository
-git clone https://github.com/contentstack/stack-details.git
-cd stack-details
+git clone https://github.com/contentstack/marketplace-quick-info-dashboard-app.git
+cd marketplace-quick-info-dashboard-app
 
 # Install dependencies
 npm install
@@ -63,7 +63,7 @@ npm run build
 ## 🏗️ Project Structure
 
 ```
-stack-details/
+marketplace-quick-info-dashboard-app/
 ├── src/
 │   ├── components/          # Reusable React components
 │   │   ├── ui/             # UI components (StackIcons, etc.)
@@ -236,7 +236,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 📞 Support
 
-- **Issues**: [GitHub Issues](https://github.com/contentstack/stack-details/issues)
+- **Issues**: [GitHub Issues](https://github.com/contentstack/marketplace-quick-info-dashboard-app/issues)
 - **Documentation**: [Contentstack Developer Hub](https://www.contentstack.com/docs/developers/developer-hub)
 - **Community**: [Contentstack Community](https://community.contentstack.com/)
 
