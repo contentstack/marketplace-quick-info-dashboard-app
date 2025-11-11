@@ -1,0 +1,39 @@
+body {
+  overflow: hidden;
+}
+
+.layout-container {
+  width: 640px;
+  height: 320px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+/* Removed ui-location and ui-container as they're no longer needed */
+
+.config-container {
+  width: 23.5625rem;
+  justify-content: center;
+  gap: 0.25rem;
+}
+
+.label {
+  font-size: 0.875rem;
+}
+
+.info {
+  font-size: 0.875rem;
+}
+
+.location-description {
+  width: 25.5625rem;
+}
+
+.location-description-text {
+  white-space: nowrap;
+  word-wrap: break-word;
+}

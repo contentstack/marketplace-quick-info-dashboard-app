@@ -1,0 +1,110 @@
+{
+  "name": "@contentstack/marketplace-quick-info-dashboard-app",
+  "description": "A Contentstack marketplace app that uses the Management SDK to retrieve real-time stack statistics and generates interactive dashboards displaying content types, entries, and assets counts with navigation capabilities.",
+  "version": "1.0.0",
+  "type": "module",
+  "private": true,
+  "files": [
+    "dist"
+  ],
+  "author": "Contentstack",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/contentstack/marketplace-quick-info-dashboard-app"
+  },
+  "bugs": {
+    "url": "https://github.com/contentstack/marketplace-quick-info-dashboard-app/issues"
+  },
+  "dependencies": {
+    "@contentstack/app-sdk": "^2.3.4",
+    "@contentstack/management": "^1.25.0",
+    "@contentstack/venus-components": "^3.0.1",
+    "@playwright/test": "^1.45.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-router-dom": "^6.21.1"
+  },
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "lint": "eslint src --ext .js,.jsx,.ts,.tsx",
+    "lint:fix": "eslint src --fix && npm run format",
+    "lint:strict": "eslint --max-warnings=0 src",
+    "build:check": "tsc -b && vite build",
+    "typecheck": "tsc --noEmit --incremental false",
+    "preview": "vite preview --host",
+    "format": "prettier -w .",
+    "format:check": "prettier -c .",
+    "prepare": "husky install",
+    "test:chrome": "npx playwright test --config=playwright.config.ts --project=Chromium",
+    "test:firefox": "npx playwright test --config=playwright.config.ts --project=firefox",
+    "test:chrome-headed": "npx playwright test --headed --config=playwright.config.ts --project=Chromium",
+    "test:firefox-headed": "npx playwright test --headed --config=playwright.config.ts --project=firefox",
+    "test:chrome-debug-headed": "npx playwright test --headed --config=playwright.config.ts --project=Chromium --debug",
+    "show-report": "npx playwright show-report"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=8.0.0"
+  },
+  "browserslist": {
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
+  },
+  "devDependencies": {
+    "@commitlint/cli": "^16.3.0",
+    "@commitlint/config-conventional": "^16.2.4",
+    "@types/node": "^18.19.4",
+    "@types/react": "^18.2.46",
+    "@types/react-dom": "^18.2.18",
+    "@typescript-eslint/eslint-plugin": "^5.62.0",
+    "@typescript-eslint/parser": "^5.62.0",
+    "@vitejs/plugin-react": "^4.3.4",
+    "autoprefixer": "^10.4.21",
+    "dotenv": "^16.4.7",
+    "eslint": "^8.56.0",
+    "eslint-plugin-react": "^7.33.2",
+    "eslint-plugin-react-hooks": "^4.6.0",
+    "eslint-plugin-react-refresh": "^0.4.24",
+    "husky": "^8.0.3",
+    "lint-staged": "^12.5.0",
+    "postcss": "^8.5.6",
+    "prettier": "^3.6.2",
+    "tailwindcss": "^3.4.17",
+    "typescript": "^4.9.3",
+    "vite": "^6.2.3"
+  },
+  "keywords": [
+    "app",
+    "stack",
+    "details",
+    "widget",
+    "contentstack",
+    "marketplace",
+    "app"
+  ],
+  "lint-staged": {
+    "**/*.{js,jsx,ts,tsx}": [
+      "eslint --max-warnings=0",
+      "prettier -w"
+    ],
+    "**/*.{json,css,scss,md,webmanifest}": [
+      "prettier -w"
+    ]
+  },
+  "overrides": {
+    "@babel/runtime": "^7.26.10",
+    "min-document": "^2.19.0",
+    "global": "^4.4.0",
+    "telejson": "^7.2.0"
+  }
+}

@@ -1,0 +1,30 @@
+{
+  "description": "A dashboard widget that displays stack statistics including content types, entries, and assets count",
+  "icon": "https://your-cdn.com/icon-64x64.png",
+  "name": "Quick Info Dashboard",
+  "organization_uid": "",
+  "target_type": "stack",
+  "visibility": "private",
+  "uid": "quick_info_dashboard_v1",
+  "ui_location": {
+    "signed": false,
+    "base_url": "http://localhost:3000",
+    "locations": [
+      {
+        "type": "cs.cm.stack.dashboard",
+        "meta": [
+          {
+            "path": "/stack-dashboard",
+            "signed": false,
+            "enabled": true,
+            "default_width": "half"
+          }
+        ]
+      }
+    ]
+  },
+  "hosting": {
+    "provider": "external",
+    "deployment_url": "http://localhost:3000"
+  }
+}
