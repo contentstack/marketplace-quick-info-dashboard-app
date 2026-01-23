@@ -1,0 +1,220 @@
+---
+description: Tailwind CSS conventions, design tokens, and styling patterns
+globs: src/**/*.tsx,src/**/*.css,tailwind.config.js
+alwaysApply: false
+---
+
+# Styling Rules
+
+## Primary Styling Method
+
+Use **Tailwind CSS utility classes** as the primary styling method:
+
+```typescript
+<div className="flex flex-col justify-center items-center self-stretch cursor-pointer hover:shadow-sm transition-shadow py-4 gap-1 flex-1 rounded-lg border border-ui-border-gray">
+  {/* content */}
+</div>
+```
+
+## Design System Colors
+
+### Brand Colors
+Use these for primary brand elements:
+
+```css
+/* In Tailwind classes */
+text-brand-purple-gray     /* #6E6B86 - Secondary text */
+text-brand-orchid-purple   /* #6C5CE7 - Primary actions, links */
+text-brand-dark-text       /* #212121 - Primary text */
+text-brand-tarmac-grey     /* #475161 - Subdued text */
+```
+
+### UI Colors
+Use these for UI elements:
+
+```css
+border-ui-border-gray      /* #DDE3EE - Borders */
+bg-ui-light-bg             /* #F7F9FC - Light backgrounds */
+bg-ui-tulip-purple         /* #F9F8FF - Subtle purple backgrounds */
+```
+
+### Semantic Colors
+Use CSS variables for semantic colors:
+
+```css
+bg-background              /* Main background */
+text-foreground            /* Main text */
+bg-primary                 /* Primary actions */
+bg-muted                   /* Muted/disabled states */
+border-border              /* Default borders */
+```
+
+## Typography Scale
+
+Use the custom typography classes:
+
+```css
+text-body-p1    /* 16px, 150% line-height, 0.16px letter-spacing */
+text-body-p2    /* 14px, 150% line-height */
+text-body-p3    /* 12px, 150% line-height, 0.24px letter-spacing */
+text-stat-count /* 28px, 150% line-height - For large numbers */
+```
+
+Example:
+```typescript
+<div className="text-stat-count font-semibold text-center font-inter text-brand-dark-text">
+  {count}
+</div>
+<div className="text-body-p2 font-normal text-center font-inter text-brand-purple-gray">
+  {label}
+</div>
+```
+
+## Font Family
+
+Always use Inter font family:
+
+```css
+font-inter  /* Inter, sans-serif */
+```
+
+## Spacing and Sizing
+
+### Custom Spacing
+```css
+w-stat-card    /* 192px */
+h-stat-card    /* 206px */
+```
+
+### Common Patterns
+```css
+p-4            /* 16px padding */
+gap-4          /* 16px gap */
+gap-1          /* 4px gap */
+py-6           /* 24px vertical padding */
+```
+
+## Animation Classes
+
+### Built-in Animations
+```css
+animate-fade-in      /* Fade in with translateY */
+animate-shimmer      /* Shimmer effect for loading */
+animate-wave         /* Wave effect for skeletons */
+animate-breathing    /* Pulse/breathing effect */
+animate-pulse        /* Standard pulse */
+```
+
+### Animation Delays
+Use inline styles for staggered animations:
+
+```typescript
+<div
+  className="animate-shimmer"
+  style={{ animationDelay: `${delay}ms` }}
+/>
+```
+
+## Loading Skeleton Pattern
+
+```typescript
+function SkeletonBox({ className = "", delay = 0 }: { className?: string; delay?: number }) {
+  return (
+    <div
+      className={`bg-gradient-to-r from-muted via-muted/50 to-muted bg-[length:200%_100%] animate-shimmer rounded ${className}`}
+      style={{ animationDelay: `${delay}ms` }}
+    />
+  );
+}
+```
+
+## Component Styling Patterns
+
+### Stat Card Pattern
+```typescript
+<div className="flex flex-col justify-center items-center self-stretch cursor-pointer hover:shadow-sm transition-shadow py-4 gap-1 flex-1 rounded-lg border border-ui-border-gray w-stat-card h-stat-card">
+```
+
+### Footer Pattern
+```typescript
+<div className="flex justify-between items-center self-stretch p-4 bg-ui-light-bg border-t border-ui-border-gray">
+```
+
+### Error State Pattern
+```typescript
+<div className="flex items-center justify-center">
+  <div className="flex flex-col gap-4 text-center max-w-sm">
+```
+
+### Grid/Flex Layouts
+```typescript
+/* Horizontal card layout */
+<div className="flex gap-4 w-full">
+  {items.map(item => (
+    <div key={item.id} className="flex-1">
+```
+
+## Button Styling
+
+### Text Button
+```typescript
+<button className="cursor-pointer bg-transparent border-none px-4 py-2 text-body-p2 font-semibold font-inter text-brand-orchid-purple">
+```
+
+### Icon Button
+```typescript
+<button className="p-1 hover:bg-muted rounded transition-colors duration-200">
+```
+
+## Transitions
+
+Use consistent transition classes:
+```css
+transition-shadow          /* For shadow effects */
+transition-colors          /* For color changes */
+duration-200               /* 200ms duration */
+```
+
+## CSS File Organization
+
+- `src/index.css` - Global styles, Tailwind imports, CSS variables
+- `src/containers/index.css` - Container-specific reusable styles
+- `src/containers/*/ComponentName.css` - Component-specific styles (use sparingly)
+
+## CSS Variables
+
+Define in `src/index.css` under `@layer base`:
+
+```css
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 222.2 84% 4.9%;
+    --primary: 221.2 83.2% 53.3%;
+    --muted: 210 40% 96%;
+    --border: 214.3 31.8% 91.4%;
+    --radius: 0.5rem;
+  }
+}
+```
+
+## Avoiding CSS-in-JS
+
+Prefer Tailwind classes over inline styles. Only use inline styles for:
+- Dynamic values (animation delays)
+- Values not available in Tailwind config
+
+```typescript
+// Good - Tailwind classes
+<div className="w-8 h-8 text-primary" />
+
+// Acceptable - dynamic value
+<div style={{ animationDelay: `${index * 100}ms` }} />
+
+// Avoid - static styles inline
+<div style={{ width: '32px', height: '32px' }} />
+```
+
+@tailwind.config.js
+@src/index.css
+@src/components/loading-skeleton.tsx

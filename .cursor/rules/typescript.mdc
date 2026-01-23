@@ -1,0 +1,222 @@
+---
+description: TypeScript conventions, type definitions, and strict mode compliance
+globs: src/**/*.ts,src/**/*.tsx
+alwaysApply: false
+---
+
+# TypeScript Rules
+
+## Strict Mode
+
+This project uses TypeScript strict mode. All code must comply with:
+
+- `strict: true`
+- `noUnusedLocals: true`
+- `noUnusedParameters: true`
+- `noFallthroughCasesInSwitch: true`
+
+## Interface Naming Conventions
+
+Use **PascalCase** for interfaces with descriptive suffixes:
+
+```typescript
+// Props interfaces - suffix with "Props"
+interface StatCardProps {
+  data: StatCardData;
+}
+
+// State interfaces - suffix with "State"
+interface StackStatsState {
+  stats: StackStats | null;
+  loading: boolean;
+  error: string | null;
+  lastRefreshed: Date | null;
+}
+
+// Data interfaces - suffix with "Data" or describe the entity
+interface StatCardData {
+  type: "content-types" | "entries" | "assets";
+  count: number;
+  label: string;
+}
+
+interface StackStats {
+  contentTypes: number;
+  entries: number;
+  assets: number;
+}
+
+// Context types - suffix with "Type"
+type MarketplaceAppContextType = {
+  appSdk: UiLocation | null;
+  appConfig: KeyValueObj | null;
+};
+```
+
+## Type Location Conventions
+
+### Component-specific types
+Place in `src/components/types/`:
+
+```typescript
+// src/components/types/stat-interface.tsx
+export interface StatCardData { ... }
+export interface StackStats { ... }
+```
+
+### Shared/common types
+Place in `src/common/types/`:
+
+```typescript
+// src/common/types/types.ts
+export interface KeyValueObj {
+  [key: string]: string;
+}
+```
+
+### Inline types
+Define above the component for simple, single-use types:
+
+```typescript
+interface StatCardProps {
+  data: StatCardData;
+}
+
+export function StatCard({ data }: StatCardProps) { ... }
+```
+
+## Environment Variable Types
+
+Define environment variables in `src/custom.d.ts`:
+
+```typescript
+/// <reference types="vite/client" />
+
+interface ImportMetaEnv {
+  readonly VITE_APP_BASE_URL: string;
+  // Add other env variables here as needed
+}
+
+interface ImportMeta {
+  readonly env: ImportMetaEnv;
+}
+```
+
+## Module Declarations
+
+Declare module types for non-TypeScript assets:
+
+```typescript
+// src/custom.d.ts
+declare module "*.svg" {
+  const src: string;
+  export default src;
+}
+```
+
+## Type Exports
+
+Export types from the file where they're defined:
+
+```typescript
+// Export with interface
+export interface StackStats {
+  contentTypes: number;
+  entries: number;
+  assets: number;
+}
+
+// Re-export from index if needed
+export { StackStats, StatCardData } from "./stat-interface";
+```
+
+## Null Handling
+
+Use explicit null checks and optional chaining:
+
+```typescript
+// Good - explicit null handling
+const stackApiKey = appSdk?.ids?.apiKey || null;
+
+// Good - type guards
+if (!appSdk || !managementClient) {
+  throw new Error("SDK not available");
+}
+
+// Good - nullish coalescing
+const count = entriesApiResponse?.count ?? 0;
+```
+
+## Union Types for Discriminated Data
+
+Use string literal unions for type discrimination:
+
+```typescript
+interface StatCardData {
+  type: "content-types" | "entries" | "assets";  // Discriminator
+  count: number;
+  label: string;
+}
+```
+
+## Function Return Types
+
+Explicitly type async function returns:
+
+```typescript
+const fetchStackStats = useCallback(async (): Promise<StackStats> => {
+  // ...
+}, [dependencies]);
+
+const formatLastRefreshed = (date: Date | null): string => {
+  if (!date) return "";
+  return date.toLocaleTimeString("en-GB", { ... });
+};
+```
+
+## Generic Types
+
+Use generics for reusable utility functions:
+
+```typescript
+// From @contentstack/management SDK usage
+const [managementClient, setManagementClient] = 
+  useState<ReturnType<typeof client> | null>(null);
+```
+
+## React Component Types
+
+Use `React.FC` sparingly; prefer explicit return types:
+
+```typescript
+// Preferred - explicit typing
+type ProviderProps = {
+  children?: React.ReactNode;
+};
+
+export const MarketplaceAppProvider: React.FC<ProviderProps> = ({ children }) => {
+  // ...
+};
+
+// Also acceptable - inferred return type
+export function StatCard({ data }: StatCardProps) {
+  return <div>{data.label}</div>;
+}
+```
+
+## Type Assertions
+
+Use type assertions sparingly and with caution:
+
+```typescript
+// Acceptable when necessary
+const { appSdk } = useContext(MarketplaceAppContext) as MarketplaceAppContextType;
+
+// For DOM elements
+const root = ReactDOM.createRoot(document.getElementById("root") as HTMLElement);
+```
+
+@src/custom.d.ts
+@src/common/types/types.ts
+@src/components/types/stat-interface.tsx
+@tsconfig.json

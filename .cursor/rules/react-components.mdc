@@ -1,0 +1,205 @@
+---
+description: React component patterns, hooks, and best practices for this project
+globs: src/**/*.tsx
+alwaysApply: false
+---
+
+# React Component Rules
+
+## Component Style
+
+Use **functional components** with hooks. Class components are only used for ErrorBoundary.
+
+```typescript
+// Good - functional component
+export function StatCard({ data }: StatCardProps) {
+  return <div>{data.label}</div>;
+}
+
+// Also good - arrow function for simple components
+const DefaultPage = () => {
+  return <div>Welcome</div>;
+};
+```
+
+## Export Conventions
+
+- **Named exports** for reusable components in `components/`
+- **Default exports** for page components in `containers/`
+
+```typescript
+// components/stat-card.tsx - named export
+export function StatCard({ data }: StatCardProps) { ... }
+
+// containers/DashboardWidget/StackDashboard.tsx - default export
+const StackDashboardExtension = () => { ... };
+export default StackDashboardExtension;
+```
+
+## Props Interface Pattern
+
+Define props interface above the component:
+
+```typescript
+interface StatCardProps {
+  data: StatCardData;
+}
+
+export function StatCard({ data }: StatCardProps) {
+  // Component implementation
+}
+```
+
+For complex types, place in `components/types/` folder:
+
+```typescript
+// components/types/stat-interface.tsx
+export interface StatCardData {
+  type: "content-types" | "entries" | "assets";
+  count: number;
+  label: string;
+  icon: React.ComponentType<{ className?: string }>;
+  onClick?: () => void;
+}
+```
+
+## State Management Patterns
+
+### Local State with useState
+
+```typescript
+const [state, setState] = useState<StackStatsState>({
+  stats: null,
+  loading: true,
+  error: null,
+  lastRefreshed: null,
+});
+```
+
+### Memoized Callbacks with useCallback
+
+```typescript
+const fetchStackStats = useCallback(async (): Promise<StackStats> => {
+  if (!appSdk || !managementClient) {
+    throw new Error("SDK not available");
+  }
+  // ... fetch logic
+}, [appSdk, managementClient]);
+```
+
+### Side Effects with useEffect
+
+```typescript
+useEffect(() => {
+  if (appSdk && managementClient) {
+    refreshStats();
+  }
+}, [refreshStats, appSdk, managementClient]);
+```
+
+## Custom Hooks
+
+Place custom hooks in `src/common/hooks/`:
+
+```typescript
+// useAppSdk.tsx
+export const useAppSdk = () => {
+  const { appSdk } = useContext(MarketplaceAppContext) as MarketplaceAppContextType;
+  return appSdk;
+};
+```
+
+## Lazy Loading for Routes
+
+Use `React.lazy()` for route-level code splitting:
+
+```typescript
+const StackDashboardExtension = React.lazy(() => import("../DashboardWidget/StackDashboard"));
+const PageNotFound = React.lazy(() => import("../404/404"));
+
+// Wrap lazy components with Suspense
+<Suspense>
+  <StackDashboardExtension />
+</Suspense>
+```
+
+## Error Boundary Pattern
+
+Wrap the app with ErrorBoundary at the root level:
+
+```typescript
+function App() {
+  return (
+    <ErrorBoundary>
+      <MarketplaceAppProvider>
+        <Routes>
+          {/* routes */}
+        </Routes>
+      </MarketplaceAppProvider>
+    </ErrorBoundary>
+  );
+}
+```
+
+## Render Helper Functions
+
+For complex conditional rendering, use helper functions:
+
+```typescript
+const renderErrorState = () => (
+  <div className="flex items-center justify-center">
+    {/* error UI */}
+  </div>
+);
+
+const renderLoadingState = () => (
+  <div className="flex items-center justify-center">
+    {Array.from({ length: 3 }).map((_, index) => (
+      <StatCardSkeleton key={index} />
+    ))}
+  </div>
+);
+
+// In JSX
+return (
+  <div>
+    {state.error ? renderErrorState() : state.loading ? renderLoadingState() : renderStatsGrid()}
+  </div>
+);
+```
+
+## Data Test IDs
+
+Add `data-testid` attributes for testable elements:
+
+```typescript
+<div
+  className="..."
+  data-testid={`stat-card-${data.type}`}
+  onClick={data.onClick}>
+  <div data-testid={`stat-count-${data.type}`}>{data.count}</div>
+  <div data-testid={`stat-label-${data.type}`}>{data.label}</div>
+</div>
+```
+
+## Icon Components
+
+Define SVG icons as functional components with className prop:
+
+```typescript
+interface IconProps {
+  className?: string;
+}
+
+export function ContentModelIcon({ className = "w-8 h-8" }: IconProps) {
+  return (
+    <svg className={className} viewBox="0 0 32 33" fill="none">
+      {/* SVG paths */}
+    </svg>
+  );
+}
+```
+
+@src/components/StackMetrics.tsx
+@src/components/stat-card.tsx
+@src/containers/App/App.tsx

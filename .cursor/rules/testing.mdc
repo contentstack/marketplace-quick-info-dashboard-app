@@ -1,0 +1,265 @@
+---
+description: Playwright E2E testing patterns, Page Object Model, and test conventions
+globs: e2e/**/*.ts,playwright.config.ts,global-setup.ts,global-teardown.ts
+alwaysApply: false
+---
+
+# Testing Rules
+
+## Test Framework
+
+- **Playwright** for E2E testing
+- Tests run in Chromium, Firefox, and Safari
+- Global setup/teardown for authentication
+
+## File Organization
+
+```
+e2e/
+├── tests/                           # Test specifications
+│   └── stack-details-app.spec.ts    # Feature tests
+├── pages/                           # Page Object Models
+│   ├── DashboardWidgetPage.ts       # Dashboard POM
+│   ├── LoginPage.ts                 # Login POM
+│   └── dashboard/
+│       └── dashboard-page.elements.ts  # Element selectors
+└── utils/
+    └── helper.ts                    # API helpers, utilities
+```
+
+## Page Object Model Pattern
+
+### Structure
+```typescript
+import { Page, expect, FrameLocator } from "@playwright/test";
+import { elements } from "./dashboard/dashboard-page.elements";
+
+export class DashboardWidgetPage {
+  readonly page: Page;
+  frame: FrameLocator | null = null;
+
+  constructor(page: Page) {
+    this.page = page;
+  }
+
+  // Navigation methods
+  async navigateToDashboard(apiKey: string) { ... }
+
+  // Action methods
+  async clickRefreshButton() { ... }
+  async clickStatCard(type: "content-types" | "entries" | "assets") { ... }
+
+  // Getter methods
+  async getStatCount(type: string): Promise<string | null> { ... }
+
+  // Verification methods
+  async verifyStatCardsVisible() { ... }
+  async verifyTimestampFormat(): Promise<boolean> { ... }
+}
+```
+
+### Frame Handling
+For Contentstack iframe integration:
+
+```typescript
+async accessFrame(): Promise<FrameLocator> {
+  const elementHandle = await this.page.waitForSelector(elements.appExtensionComponent);
+  const frameHandle = await elementHandle.contentFrame();
+  if (!frameHandle) {
+    throw new Error("Could not access content frame");
+  }
+  this.frame = this.page.locator(elements.appExtensionFrame).contentFrame();
+  return this.frame;
+}
+
+async ensureFrame(): Promise<FrameLocator> {
+  if (!this.frame) {
+    return await this.accessFrame();
+  }
+  return this.frame;
+}
+```
+
+## Element Selectors
+
+Centralize selectors in `.elements.ts` files:
+
+```typescript
+// e2e/pages/dashboard/dashboard-page.elements.ts
+export const elements = {
+  // Frame selectors
+  appExtensionComponent: ".app-extension-component",
+  appExtensionFrame: '[data-testid="app-extension-frame"]',
+  stackDetailsWidget: '[data-testid="stack-details-widget"]',
+
+  // Stat card selectors
+  statCards: {
+    contentTypes: '[data-testid="stat-card-content-types"]',
+    entries: '[data-testid="stat-card-entries"]',
+    assets: '[data-testid="stat-card-assets"]',
+  },
+
+  // Footer selectors
+  footer: {
+    container: '[data-testid="footer-container"]',
+    refreshButton: '[data-testid="refresh-button"]',
+  },
+
+  // Helper functions for dynamic selectors
+  getStatCard: (type: "content-types" | "entries" | "assets") => 
+    `[data-testid="stat-card-${type}"]`,
+} as const;
+```
+
+## data-testid Naming Conventions
+
+Follow these patterns:
+
+| Element Type | Pattern | Example |
+|-------------|---------|---------|
+| Container | `{feature}-widget` | `stack-details-widget` |
+| Card | `stat-card-{type}` | `stat-card-content-types` |
+| Count | `stat-count-{type}` | `stat-count-entries` |
+| Label | `stat-label-{type}` | `stat-label-assets` |
+| Button | `{action}-button` | `refresh-button` |
+| Footer | `footer-{element}` | `footer-container` |
+| Skeleton | `{element}-skeleton` | `stat-card-skeleton` |
+
+## Test Structure
+
+```typescript
+import { test, expect } from "@playwright/test";
+import { DashboardWidgetPage } from "../pages/DashboardWidgetPage";
+
+test("Should display correct stat card data", async ({ page }) => {
+  const dashboardWidgetPage = new DashboardWidgetPage(page);
+
+  // Navigate
+  await dashboardWidgetPage.navigateToDashboard(process.env.STACK_API_KEY || "");
+
+  // Verify
+  await dashboardWidgetPage.verifyStatCardsVisible();
+  await dashboardWidgetPage.verifyStatCardData("content-types", "Content Types");
+});
+```
+
+## Waiting Strategies
+
+### Wait for data load
+```typescript
+async waitForDataLoad() {
+  const frame = await this.ensureFrame();
+  await expect(frame.getByText(elements.text.dataRefreshed))
+    .toHaveText(elements.text.dataRefreshed, { timeout: 15000 });
+}
+```
+
+### Wait for element visibility
+```typescript
+await expect(frame.locator(elements.footer.success))
+  .toBeVisible({ timeout: 15000 });
+```
+
+### Wait for skeleton to appear/disappear
+```typescript
+async waitForSkeletonToAppear() {
+  const frame = await this.ensureFrame();
+  await expect(frame.locator(elements.skeleton.statCard).first())
+    .toBeVisible({ timeout: 2000 });
+}
+```
+
+## Popup/New Tab Handling
+
+```typescript
+async clickStatLabelAndVerifyPopup(type: string, expectedUrlFragment: string) {
+  const frame = await this.ensureFrame();
+  const pagePromise = this.page.waitForEvent("popup");
+  await frame.locator(elements.getStatLabel(type)).click();
+  const newPage = await pagePromise;
+  expect(newPage.url()).toContain(expectedUrlFragment);
+  await newPage.close();
+}
+```
+
+## Error Handling in Tests
+
+Use try-catch for race conditions:
+
+```typescript
+test("Should display loading state", async ({ page }) => {
+  try {
+    await dashboardWidgetPage.waitForSkeletonToAppear();
+    await dashboardWidgetPage.verifySkeletonCount(3);
+  } catch (error) {
+    // Loading was too fast, verify final content instead
+    console.log("Skeleton loaded too quickly");
+  }
+  await dashboardWidgetPage.waitForFooterSuccess();
+});
+```
+
+## Global Setup/Teardown
+
+### Global Setup (Authentication)
+```typescript
+// global-setup.ts
+async function globalSetup(config: FullConfig) {
+  const browser = await chromium.launch();
+  const page = await browser.newPage();
+  const loginPage = new LoginPage(page);
+  await loginPage.visitLoginPage();
+  await loginPage.performLogin(EMAIL, PASSWORD);
+  await getAuthToken();
+}
+```
+
+### Global Teardown (Cleanup)
+```typescript
+// global-teardown.ts
+async function globalTeardown(config: FullConfig) {
+  await fs.unlink("data.json", (err) => {
+    if (err) throw err;
+  });
+}
+```
+
+## Test Configuration
+
+Key settings in `playwright.config.ts`:
+
+```typescript
+const config: PlaywrightTestConfig = {
+  testDir: "./e2e/tests",
+  timeout: 30 * 10000,
+  expect: { timeout: 5000 },
+  use: {
+    storageState: "storageState.json",
+    viewport: { width: 1440, height: 720 },
+    baseURL: process.env.ENV_URL,
+  },
+};
+```
+
+## Environment Variables for Tests
+
+Required in `.env`:
+- `ENV_URL` - Base URL for tests
+- `STACK_API_KEY` - Stack API key
+- `EMAIL` - Login email
+- `PASSWORD` - Login password
+- `ORG_ID` - Organization ID
+
+## Running Tests
+
+```bash
+npm run test:chrome           # Run in Chrome
+npm run test:firefox          # Run in Firefox
+npm run test:chrome-headed    # Run in Chrome with UI
+npm run show-report           # View HTML report
+```
+
+@e2e/pages/DashboardWidgetPage.ts
+@e2e/pages/dashboard/dashboard-page.elements.ts
+@e2e/tests/stack-details-app.spec.ts
+@playwright.config.ts

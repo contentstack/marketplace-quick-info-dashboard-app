@@ -1,0 +1,249 @@
+---
+description: Code quality standards including ESLint, Prettier, commit conventions, and pre-commit hooks
+globs:
+alwaysApply: true
+---
+
+# Code Quality Rules
+
+## Commit Message Format
+
+Follow **Conventional Commits** format:
+
+```
+<type>(<scope>): <description>
+
+[optional body]
+
+[optional footer(s)]
+```
+
+### Commit Types
+
+| Type | Description |
+|------|-------------|
+| `feat` | New feature |
+| `fix` | Bug fix |
+| `docs` | Documentation changes |
+| `chore` | Maintenance tasks |
+| `style` | Code style changes (formatting) |
+| `refactor` | Code refactoring |
+| `ci` | CI/CD changes |
+| `test` | Adding or updating tests |
+| `perf` | Performance improvements |
+| `revert` | Reverting changes |
+| `add` | Adding new files/dependencies |
+| `update` | Updating existing functionality |
+
+### Examples
+
+```bash
+feat(dashboard): add refresh button to stats widget
+fix(sdk): handle permission errors in entry count
+docs(readme): update installation instructions
+chore(deps): update venus-components to 3.0.1
+test(e2e): add stat card interaction tests
+```
+
+## ESLint Configuration
+
+### Rules Enforced
+
+The project uses ESLint with these plugins:
+- `@typescript-eslint/eslint-plugin`
+- `eslint-plugin-react`
+- `eslint-plugin-react-hooks`
+- `eslint-plugin-react-refresh`
+
+### Strict Mode
+
+Linting runs in strict mode with `--max-warnings=0`:
+
+```bash
+npm run lint:strict  # Fails on any warnings
+```
+
+### Common Rules
+
+- No unused variables or parameters
+- React hooks dependencies must be correct
+- Consistent import ordering
+- No console.log in production (warnings allowed)
+
+## Prettier Configuration
+
+### Format on Save
+
+Prettier formats these file types:
+- `.js`, `.jsx`, `.ts`, `.tsx`
+- `.json`, `.css`, `.scss`, `.md`
+
+### Running Prettier
+
+```bash
+npm run format        # Format all files
+npm run format:check  # Check formatting without changes
+```
+
+## Pre-commit Hooks
+
+Husky runs lint-staged on commit:
+
+```json
+{
+  "lint-staged": {
+    "**/*.{js,jsx,ts,tsx}": [
+      "eslint --max-warnings=0",
+      "prettier -w"
+    ],
+    "**/*.{json,css,scss,md}": [
+      "prettier -w"
+    ]
+  }
+}
+```
+
+### What Happens on Commit
+
+1. ESLint checks staged `.js/.jsx/.ts/.tsx` files
+2. Prettier formats all staged files
+3. Commitlint validates commit message
+4. Commit proceeds if all checks pass
+
+## TypeScript Strict Mode
+
+Enabled in `tsconfig.json`:
+
+```json
+{
+  "compilerOptions": {
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noFallthroughCasesInSwitch": true
+  }
+}
+```
+
+## Type Checking
+
+Run type check without emitting:
+
+```bash
+npm run typecheck  # tsc --noEmit
+```
+
+## Build Verification
+
+Full build check (types + build):
+
+```bash
+npm run build:check  # tsc -b && vite build
+```
+
+## Code Review Checklist
+
+Before committing, verify:
+
+- [ ] No ESLint errors or warnings
+- [ ] Code is formatted with Prettier
+- [ ] TypeScript compiles without errors
+- [ ] All `data-testid` attributes follow naming convention
+- [ ] New components have proper TypeScript interfaces
+- [ ] Error states are handled gracefully
+- [ ] Loading states use skeleton components
+- [ ] Console logs removed (except warnings for debugging)
+
+## Error Handling Standards
+
+### Async Operations
+```typescript
+try {
+  const result = await asyncOperation();
+  // Handle success
+} catch (error) {
+  // Log for debugging
+  console.error("Operation failed:", error);
+  // Set user-friendly error state
+  setState({
+    error: error instanceof Error ? error.message : "An error occurred",
+  });
+}
+```
+
+### Non-Critical Errors
+```typescript
+catch (permissionError) {
+  // Use console.warn for non-critical issues
+  console.warn("Skipping due to permissions:", permissionError);
+  return defaultValue;
+}
+```
+
+## Import Organization
+
+Organize imports in this order:
+
+1. React and React-related
+2. Third-party libraries
+3. Internal components/hooks
+4. Types
+5. Styles
+
+```typescript
+// 1. React
+import React, { useState, useEffect, useCallback } from "react";
+
+// 2. Third-party
+import { Icon } from "@contentstack/venus-components";
+
+// 3. Internal
+import { useAppSdk } from "../common/hooks/useAppSdk";
+import { StatCard } from "./stat-card";
+
+// 4. Types
+import { StatCardData } from "./types/stat-interface";
+
+// 5. Styles
+import "./StackDashboard.css";
+```
+
+## File Header Comments
+
+For complex files, add a header comment:
+
+```typescript
+/**
+ * useAppSdk
+ * @return the appSdk instance after initialization
+ */
+
+/**
+ * AppFailed component.
+ * This component will be rendered if the App fails to initialize.
+ */
+```
+
+## Console Output Guidelines
+
+| Level | Use Case | Production |
+|-------|----------|------------|
+| `console.error` | Critical errors | Keep |
+| `console.warn` | Non-critical issues | Keep |
+| `console.log` | Debugging | Remove |
+| `console.debug` | Detailed debugging | Remove |
+
+## Testing Before Push
+
+Run this sequence before pushing:
+
+```bash
+npm run typecheck     # Type checking
+npm run lint:strict   # Strict linting
+npm run format:check  # Format verification
+npm run build         # Build verification
+```
+
+@commitlint.config.js
+@package.json
+@tsconfig.json

@@ -1,0 +1,302 @@
+---
+description: Contentstack App SDK and Management SDK patterns and best practices
+globs: src/common/**/*
+alwaysApply: false
+---
+
+# Contentstack SDK Rules
+
+## SDK Dependencies
+
+- `@contentstack/app-sdk` - For marketplace app integration
+- `@contentstack/management` - For CMA API access
+- `@contentstack/venus-components` - For UI components
+
+## App SDK Initialization
+
+Initialize the SDK in a provider component:
+
+```typescript
+// src/common/providers/MarketplaceAppProvider.tsx
+import ContentstackAppSDK from "@contentstack/app-sdk";
+import UiLocation from "@contentstack/app-sdk/dist/src/uiLocation";
+
+export const MarketplaceAppProvider: React.FC<ProviderProps> = ({ children }) => {
+  const [failed, setFailed] = useState<boolean>(false);
+  const [appSdk, setAppSdk] = useState<UiLocation | null>(null);
+  const [appConfig, setConfig] = useState<KeyValueObj | null>(null);
+
+  useEffect(() => {
+    let mounted = true;
+
+    const initializeSDK = async () => {
+      try {
+        const appSdk = await ContentstackAppSDK.init();
+        if (!mounted) return;
+        
+        setAppSdk(appSdk);
+        
+        // Configure frame dimensions based on location
+        appSdk.location.DashboardWidget?.frame?.disableAutoResizing();
+        await appSdk.location.DashboardWidget?.frame?.updateHeight?.(722);
+        
+        const appConfig = await appSdk.getConfig();
+        if (mounted) setConfig(appConfig);
+      } catch (error) {
+        if (mounted) setFailed(true);
+      }
+    };
+
+    initializeSDK();
+    return () => { mounted = false; };
+  }, []);
+
+  if (!failed && !appSdk) return <div>Loading...</div>;
+  if (failed) return <AppFailed />;
+
+  return (
+    <MarketplaceAppContext.Provider value={{ appSdk, appConfig }}>
+      {children}
+    </MarketplaceAppContext.Provider>
+  );
+};
+```
+
+## Context Pattern
+
+Define context type and create context:
+
+```typescript
+// src/common/contexts/marketplaceContext.ts
+import React from "react";
+import UiLocation from "@contentstack/app-sdk/dist/src/uiLocation";
+
+export type MarketplaceAppContextType = {
+  appSdk: UiLocation | null;
+  appConfig: KeyValueObj | null;
+};
+
+export const MarketplaceAppContext = React.createContext<MarketplaceAppContextType>({
+  appSdk: null,
+  appConfig: null,
+});
+```
+
+## Custom Hook for SDK Access
+
+```typescript
+// src/common/hooks/useAppSdk.tsx
+export const useAppSdk = () => {
+  const { appSdk } = useContext(MarketplaceAppContext) as MarketplaceAppContextType;
+  return appSdk;
+};
+```
+
+## Management Client Setup
+
+```typescript
+// src/common/hooks/useManagementClient.ts
+import { client } from "@contentstack/management";
+import { useAppSdk } from "./useAppSdk";
+
+export const useManagementClient = () => {
+  const appSdk = useAppSdk();
+  const [managementClient, setManagementClient] = 
+    useState<ReturnType<typeof client> | null>(null);
+
+  useEffect(() => {
+    if (!appSdk) {
+      setManagementClient(null);
+      return;
+    }
+
+    try {
+      const contentstackAdapter = appSdk.createAdapter();
+      const managementClient = client({
+        adapter: contentstackAdapter,
+        baseURL: `${appSdk.endpoints.CMA}/v3`,
+      });
+      setManagementClient(managementClient);
+    } catch (error) {
+      console.error("Failed to initialize Management Client:", error);
+      setManagementClient(null);
+    }
+  }, [appSdk]);
+
+  return managementClient;
+};
+```
+
+## API Fetching Patterns
+
+### Basic Query with Count
+```typescript
+const stack = await managementClient.stack({
+  api_key: appSdk.ids.apiKey,
+});
+
+// Fetch with count
+const { count: contentTypeCount } = await stack
+  .contentType()
+  .query({ include_count: true })
+  .find();
+```
+
+### Pagination for Large Datasets
+```typescript
+const fetchAllContentTypes = async () => {
+  let allContentTypes = [];
+  let skip = 0;
+  const limit = 100;
+  let hasMore = true;
+
+  while (hasMore) {
+    const response = await stack
+      .contentType()
+      .query({ skip, include_count: true })
+      .find();
+    
+    allContentTypes.push(...(response.items || []));
+    
+    const totalCount = response.count || 0;
+    skip += limit;
+    hasMore = skip < totalCount;
+  }
+
+  return allContentTypes;
+};
+```
+
+### Parallel Processing
+```typescript
+const entryCountingPromises = contentTypesCollection.map(async (contentTypeItem) => {
+  try {
+    const entriesApiResponse = await stack
+      .contentType(contentTypeItem.uid)
+      .entry()
+      .query({ include_count: true })
+      .find();
+    return entriesApiResponse?.count ?? 0;
+  } catch (permissionError) {
+    // Gracefully handle permission errors
+    console.warn(`Skipping "${contentTypeItem.uid}" due to access restrictions`);
+    return 0;
+  }
+});
+
+const counts = await Promise.all(entryCountingPromises);
+const totalCount = counts.reduce((acc, count) => acc + count, 0);
+```
+
+## Error Handling
+
+### SDK Initialization Errors
+Display `AppFailed` component when SDK fails to initialize:
+
+```typescript
+if (failed) {
+  return <AppFailed />;
+}
+```
+
+### API Errors
+Use try-catch with user-friendly messages:
+
+```typescript
+try {
+  const stats = await fetchStackStats();
+  setState({ stats, loading: false, error: null, lastRefreshed: new Date() });
+} catch (error) {
+  setState({
+    stats: null,
+    loading: false,
+    error: error instanceof Error ? error.message : "Failed to fetch statistics",
+    lastRefreshed: null,
+  });
+}
+```
+
+### Permission Errors
+Log warnings and continue with partial data:
+
+```typescript
+catch (permissionError) {
+  console.warn(`Skipping content type due to access restrictions:`, permissionError);
+  return 0;  // Return default value
+}
+```
+
+## Frame Configuration
+
+Configure frame dimensions based on UI location:
+
+```typescript
+// Dashboard Widget
+appSdk.location.DashboardWidget?.frame?.disableAutoResizing();
+await appSdk.location.DashboardWidget?.frame?.updateHeight?.(722);
+
+// Custom Field
+await appSdk.location.CustomField?.frame?.updateHeight?.(450);
+
+// Field Modifier
+appSdk.location.FieldModifierLocation?.frame?.disableAutoResizing();
+await appSdk.location.FieldModifierLocation?.frame?.updateDimension({
+  height: 380,
+  width: 520,
+});
+```
+
+## Accessing Stack Information
+
+```typescript
+const appSdk = useAppSdk();
+const stackApiKey = appSdk?.ids?.apiKey || null;
+
+// Build URLs for navigation
+const url = `${import.meta.env.VITE_APP_BASE_URL}/#!/stack/${stackApiKey}/content-types`;
+window.open(url, "_blank");
+```
+
+## Venus Components Usage
+
+Import and use Contentstack Venus components:
+
+```typescript
+import { Icon } from "@contentstack/venus-components";
+
+<Icon version="v2" icon="WarningBoldNew" height="40px" width="40px" />
+<Icon version="v2" icon="Refresh" height="20px" width="20px" />
+```
+
+## App Manifest Configuration
+
+The `manifest.json` defines app locations and settings:
+
+```json
+{
+  "name": "Quick Info Dashboard",
+  "target_type": "stack",
+  "ui_location": {
+    "signed": false,
+    "base_url": "http://localhost:3000",
+    "locations": [
+      {
+        "type": "cs.cm.stack.dashboard",
+        "meta": [
+          {
+            "path": "/stack-dashboard",
+            "enabled": true,
+            "default_width": "half"
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+
+@src/common/hooks/useAppSdk.tsx
+@src/common/hooks/useManagementClient.ts
+@src/common/providers/MarketplaceAppProvider.tsx
+@src/components/StackMetrics.tsx
+@manifest.json
