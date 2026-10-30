@@ -13,23 +13,9 @@ test("Should display loading state with skeleton components", async ({ page }) =
   await page.goto(`/#!/stack/${process.env.STACK_API_KEY || ""}/dashboard/`);
   await dashboardWidgetPage.accessFrame();
 
-  // Try to catch skeleton components during loading (with a race condition approach)
-  try {
-    // Wait for skeleton components to appear first
-    await dashboardWidgetPage.waitForSkeletonToAppear();
-
-    // Test skeleton interactions while they're visible
-    await dashboardWidgetPage.clickSkeletonElements();
-
-    // Verify multiple skeleton components are present
-    await dashboardWidgetPage.verifySkeletonCount(3);
-  } catch (error) {
-    // If skeletons are not visible (loading was too fast),
-    // verify that the actual content is loaded instead
-    console.log("Skeleton components loaded too quickly, verifying final content");
-  }
-  // Wait for loading to complete and verify actual content appears
-  // await dashboardWidgetPage.waitForFooterSuccess();
+  // The skeleton is transient and racy, so assert the stable end state: loading finishes and the cards render.
+  await dashboardWidgetPage.waitForFooterSuccess();
+  await dashboardWidgetPage.verifyStatCardsVisible();
 });
 
 test("Should open new tabs when clicking on stat labels", async ({ page }) => {
@@ -60,14 +46,6 @@ test("Should refresh data when refresh button is clicked", async ({ page }) => {
   // Click refresh button
   await dashboardWidgetPage.clickRefreshButton();
 
-  // Verify loading state appears briefly (skeleton footer)
-  try {
-    await dashboardWidgetPage.waitForFooterSkeleton();
-  } catch (error) {
-    // Loading might be too fast to catch
-    console.log("Refresh loading state was too quick to observe");
-  }
-
   // Wait for refresh to complete
   await dashboardWidgetPage.waitForRefreshComplete();
 
@@ -95,13 +73,6 @@ test("Should display correct footer states", async ({ page }) => {
 
   // Test loading footer state by triggering refresh
   await dashboardWidgetPage.clickRefreshButton();
-
-  // Try to catch the loading footer state
-  try {
-    await dashboardWidgetPage.waitForFooterSkeleton();
-  } catch (error) {
-    console.log("Footer loading state was too quick to observe");
-  }
 
   // Verify return to success state
   await dashboardWidgetPage.waitForFooterSuccess();
