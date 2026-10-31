@@ -88,19 +88,16 @@ export function StackMetrics() {
 
       // Fetch ALL content types using pagination to handle stacks with >100 content types
       const fetchAllContentTypes = async () => {
-        let allContentTypes = [];
+        const allContentTypes = [];
         let skip = 0;
         const limit = 100; // Default limit for pagination
         let hasMore = true;
 
         while (hasMore) {
-          const response = await stack
-            .contentType()
-            .query({ skip, include_count: true })
-            .find();
-          
+          const response = await stack.contentType().query({ skip, include_count: true }).find();
+
           allContentTypes.push(...(response.items || []));
-          
+
           // Check if we need to fetch more pages
           const totalCount = response.count || 0;
           skip += limit;
