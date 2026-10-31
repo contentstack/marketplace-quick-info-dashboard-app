@@ -23,7 +23,8 @@ export default defineConfig({
         "src/test-utils/**",
         "src/common/types/**",
       ],
-      thresholds: { lines: 90, branches: 90, functions: 90, statements: 90 },
+      // measured floor (98.12 / 95.41 / 100 / 98.12), all above 90: no ratchet needed
+      thresholds: { lines: 98, branches: 95, functions: 100, statements: 98 },
     },
   },
   build: {
