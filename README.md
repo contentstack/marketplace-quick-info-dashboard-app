@@ -16,13 +16,13 @@ A modern, comprehensive dashboard widget for Contentstack marketplace apps that 
 - **Direct Navigation**: Quick access links to content types, entries, and assets in Contentstack
 - **TypeScript**: Fully typed for better development experience and code reliability
 - **Responsive Design**: Works seamlessly across different screen sizes and devices
-- **Testing**: Comprehensive test suite with Playwright for E2E testing
+- **Testing**: Vitest unit tests (`npm run test:coverage`, 90% threshold) and Playwright for E2E testing
 - **Modern UI**: Accessible interface with loading states and smooth animations
 
 ## 📋 Prerequisites
 
-- Node.js (v18 or higher)
-- npm (v8 or higher)
+- Node.js 22.12 or higher (`engines`)
+- npm
 - Contentstack account (for marketplace deployment)
 
 ## 🚀 Quick Start
@@ -44,10 +44,10 @@ npm install
 # Start development server
 npm run dev
 
-# Run tests
-npm run test:chrome
+# Run unit tests
+npm test
 
-# Run E2E tests
+# Run E2E tests (needs .env.sample variables and a Contentstack account)
 npm run test:chrome-headed
 ```
 
@@ -94,7 +94,12 @@ marketplace-quick-info-dashboard-app/
 
 ## 🧪 Testing
 
-This project includes comprehensive testing:
+### Unit tests
+
+```bash
+npm test                   # Run unit tests (Vitest)
+npm run test:coverage      # Run with the 90% coverage threshold
+```
 
 ### E2E Tests
 
@@ -126,7 +131,7 @@ VITE_APP_BASE_URL=https://app.contentstack.com
 
 ### App Configuration
 
-The app configuration is defined in `manifest.json`:
+The app configuration is defined in `manifest.json`. It is a placeholder (localhost URLs and a `your-cdn` icon), not the production manifest. A trimmed example:
 
 ```json
 {
@@ -184,10 +189,11 @@ test: add unit tests for stat card component
 
 ### Contentstack Marketplace
 
-1. Build the application: `npm run build`
-2. Package the `dist` directory
-3. Upload to Contentstack marketplace
-4. Install in your Contentstack stack
+Hosting for this app is not yet decided (tracked in MKT-19794); it does not resolve on a Marketplace domain today.
+
+1. Build the application: `npm run build` (output in `dist/`)
+2. Host the `dist` directory and set the real URLs in the manifest
+3. Register the app in Developer Hub and install it in a stack
 
 ### Local Development
 
@@ -220,7 +226,7 @@ npm install
 npm run dev
 
 # Run tests to ensure everything works
-npm run test:chrome
+npm test
 ```
 
 ## 📄 License
