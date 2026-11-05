@@ -11,6 +11,8 @@ export default defineConfig({
   },
   build: {
     outDir: "dist",
+    // venus-components 3.0.6 ships a require("void-elements") inside ES modules; convert it, or the field throws on load.
+    commonjsOptions: { transformMixedEsModules: true },
   },
   server: {
     port: 3000,
